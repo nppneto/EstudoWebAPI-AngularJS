@@ -1,4 +1,5 @@
 ﻿using DevStore.Domain;
+using DevStore.Infra.Mappings;
 using System.Data.Entity;
 
 namespace DevStore.Infra.DataContexts
@@ -18,6 +19,14 @@ namespace DevStore.Infra.DataContexts
         public DbSet<Product> Products { get; set; }
 
         public DbSet<Category> Categories { get; set; }
+
+        // Responsável pela instância/referência dos mapeamentos para o banco de dados.
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            modelBuilder.Configurations.Add(new ProductMap());
+            modelBuilder.Configurations.Add(new CategoryMap());
+            base.OnModelCreating(modelBuilder);
+        }
     }
 
     // Toda vez que houver uma mudança nas classes modelo (Product, Category e etc), o banco automáticamente será dropado e criado novamente.
