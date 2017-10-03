@@ -9,16 +9,21 @@ namespace DevStore.Infra.DataContexts
     public class DevStoreDataContext : DbContext
     {
         public DevStoreDataContext() 
-            : base("DevStoreConnectionString")
+            : base("DevStore")
         {
             // Atribui um inicializador para o DevStoreDataContext, que será um novo objeto do DevStoreDataContextInitializer.
             Database.SetInitializer<DevStoreDataContext>(new DevStoreDataContextInitializer());
+
+            // Carrega itens sob demanda... No caso, no JSON, produtos e categorias estarão aninhadas com os Id's de categorias todos nulos.
+            Configuration.LazyLoadingEnabled = false;
+            // Cancela a criação de proxys nas classes.
+            Configuration.ProxyCreationEnabled = false;
         }
 
         // Trará os dados de uma tabela, no caso Products, para uma lista.
-        public DbSet<Product> Products { get; set; }
+        public IDbSet<Product> Products { get; set; }
 
-        public DbSet<Category> Categories { get; set; }
+        public IDbSet<Category> Categories { get; set; }
 
         // Responsável pela instância/referência dos mapeamentos para o banco de dados.
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
