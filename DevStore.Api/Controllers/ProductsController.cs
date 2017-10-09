@@ -1,28 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using DevStore.Domain;
+using DevStore.Infra.DataContexts;
+using System;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
-using System.Web.Http.Description;
-using DevStore.Domain;
-using DevStore.Infra.DataContexts;
+using System.Web.Http.Cors;
 
 namespace DevStore.Api.Controllers
 {
+    // origins = quem poderá acessar a api
+    // headers = quais headers a api aceitará
+    // methods = quais métodos a api aceitará
+    [EnableCors(origins: "*", headers: "*", methods: "*")]
     // Define o prefixo para todas as rotas.
     [RoutePrefix("api/v1/public")]
     public class ProductsController : ApiController
     {
-        // instância do dbcontext... poderia ser de qualquer repositório
+        //// instância do dbcontext... poderia ser de qualquer repositório
         private DevStoreDataContext db = new DevStoreDataContext();
 
-        // Define rota do GetProducts, no caso... Por boas praticas, sempre no plural.
         [Route("products")]
-        // Action do tipo HttpResponseMessage para retorno
         public HttpResponseMessage GetProducts()
         {
             var result = db.Products.Include("Category").ToList();
@@ -30,35 +30,53 @@ namespace DevStore.Api.Controllers
         }
 
         [Route("categories")]
-        // Action do tipo HttpResponseMessage para retorno
         public HttpResponseMessage GetCategories()
         {
             var result = db.Categories.ToList();
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
-        // Sempre que entre chaves, um nome se torna parâmetro para a URL.
         [Route("categories/{categoryId}/products")]
-        // Action do tipo HttpResponseMessage para retorno
         public HttpResponseMessage GetProductsByCategories(int categoryId)
         {
-            // x receberá o resultado da comparação entre a propriedade CategoryId, da classe Product que está na IDBset<Product>, com o valor recebido por parâmetro.
             var result = db.Products.Include("Category").Where(x => x.CategoryId == categoryId).ToList();
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
-
+ 
         [HttpPost]
         [Route("products")]
-        [Route("categories/{categoryId}/products")]
         public HttpResponseMessage PostProduct(Product product)
         {
             if (product == null)
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            // Sempre que trabalhamos com operações persistidas (dados e informações), fazemos tratamento com try/catch
+            // Operações persistidas (dados e informações) sempre com try/catch
             try
             {
                 db.Products.Add(product);
+                db.SaveChanges();
+                var result = product;
+                return Request.CreateResponse(HttpStatusCode.OK, result);
+            }
+            catch (Exception)
+            {
+
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, "Falha ao incluir produto.");
+            }
+        }
+
+        [HttpPatch]
+        [Route("products")]
+        // Atualiza parcialmente um produto
+        public HttpResponseMessage PatchProduct(Product product)
+        {
+            if (product == null)
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+
+            try
+            {
+                // Informo que o produto foi modificado
+                db.Entry<Product>(product).State = EntityState.Modified;
                 db.SaveChanges();
 
                 var result = product;
@@ -66,9 +84,58 @@ namespace DevStore.Api.Controllers
             }
             catch (Exception)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, "Falha ao incluir produto.");
+
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, "Falha ao alterar o produto");
             }
 
+        }
+
+        [HttpPut]
+        [Route("products")]
+        // Atualiza completamente um produto
+        public HttpResponseMessage PutProduct(Product product)
+        {
+            if (product == null)
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+
+            try
+            {
+                // Informo que o produto foi modificado
+                db.Entry<Product>(product).State = EntityState.Modified;
+                db.SaveChanges();
+
+                var result = product;
+                return Request.CreateResponse(HttpStatusCode.OK, result);
+            }
+            catch (Exception)
+            {
+
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, "Falha ao alterar o produto");
+            }
+        }
+
+        [HttpDelete]
+        [Route("products")]
+        public HttpResponseMessage DeleteProduct(int productId)
+        {
+            // Ou int non-nullable -- if(productId <= 0)
+            if(productId <= 0)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
+
+            try
+            {
+                db.Products.Remove(db.Products.Find(productId));
+                db.SaveChanges();
+
+                return Request.CreateResponse(HttpStatusCode.OK, "Produto excluído!");
+            }
+            catch (Exception)
+            {
+
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, "Falha ao excluir o produto");
+            }
         }
 
         protected override void Dispose(bool disposing)

@@ -12,7 +12,7 @@ namespace DevStore.Infra.DataContexts
             : base("DevStore")
         {
             // Atribui um inicializador para o DevStoreDataContext, que será um novo objeto do DevStoreDataContextInitializer.
-            Database.SetInitializer<DevStoreDataContext>(new DevStoreDataContextInitializer());
+            // Database.SetInitializer<DevStoreDataContext>(new DevStoreDataContextInitializer());
 
             // Carrega itens sob demanda... No caso, no JSON, produtos e categorias estarão aninhadas com os Id's de categorias todos nulos.
             Configuration.LazyLoadingEnabled = false;
